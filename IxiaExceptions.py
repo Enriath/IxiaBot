@@ -1,0 +1,2 @@
+class CannotConnectException(Exception):
+    pass
