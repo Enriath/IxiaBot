@@ -45,32 +45,35 @@ class IxiaBot:
 		incomplete = ""
 		print("Starting chat watching")
 		while self.running:
-			last = self.socket.recv(128).decode("utf-8")						# Reads 128 Bytes from the chat
-			recents = last.split("\r\n")										# Splits it up by line(s)
-			recents[0] = incomplete + recents[0]								# Adds on the previous incomplete line.
-			incomplete = recents[-1]											# Updates what line is considered incomplete.
-			del recents[-1]													 	# Makes sure the incomplete line isn't processed this cycle.
-			for oline in recents:											  	# Line format is :<sender>!<sender>@<sender>.tmi.twitch.tv PRIVMSG #<channel> :<message>
-				sender = oline.split("!")[0][1:]								# Gets the sender.
-				line = msg.sub("", oline)									  	# Gets the message using the wonders of Regex.
-				if line[:19] == "PING :tmi.twitch.tv":							# Twitch sometimes sends these keep-alives. Sends the required response.
-					self.socket.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
-				else:
-					if not sender == self.nick:								 	# Makes IxiaBot ignore her own messages.
-						if not oline[:14] == ":tmi.twitch.tv":					# Ignore automated messages from twitch when parsing commands and such.
-							if not oline == u"":								# Ignore empty lines (this should be a rarity.
-								if not oline == line:							# Turns out automated messages get filtered by this
-									if self.timer == 0:
-										if line[0] == "!":
-											for c,r in self.commands.items():
-												if line[:len(c)].lower() == c:
-													r.reply(sender,line[len(c):])
-									if "hello ixiabot" in line.lower() and sender.lower() == "hydrox6":  # For testing purposes only.
-										self.chat("Hello Chat!")
-									try:
-										print(sender, "-", line)				# Prints the lines, so we can see what the bot sees.
-									except UnicodeError:						# This may or may not be important, but it's there anyways.
-										print("~~## ERROR LINE =( ##~~")
+			try:
+				last = self.socket.recv(128).decode("utf-8")						# Reads 128 Bytes from the chat
+				recents = last.split("\r\n")										# Splits it up by line(s)
+				recents[0] = incomplete + recents[0]								# Adds on the previous incomplete line.
+				incomplete = recents[-1]											# Updates what line is considered incomplete.
+				del recents[-1]													 	# Makes sure the incomplete line isn't processed this cycle.
+				for oline in recents:											  	# Line format is :<sender>!<sender>@<sender>.tmi.twitch.tv PRIVMSG #<channel> :<message>
+					sender = oline.split("!")[0][1:]								# Gets the sender.
+					line = msg.sub("", oline)									  	# Gets the message using the wonders of Regex.
+					if line[:19] == "PING :tmi.twitch.tv":							# Twitch sometimes sends these keep-alives. Sends the required response.
+						self.socket.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
+					else:
+						if not sender == self.nick:								 	# Makes IxiaBot ignore her own messages.
+							if not oline[:14] == ":tmi.twitch.tv":					# Ignore automated messages from twitch when parsing commands and such.
+								if not oline == u"":								# Ignore empty lines (this should be a rarity.
+									if not oline == line:							# Turns out automated messages get filtered by this
+										if self.timer == 0:
+											if line[0] == "!":
+												for c,r in self.commands.items():
+													if line[:len(c)].lower() == c:
+														r.reply(sender,line[len(c):])
+										if "hello ixiabot" in line.lower() and sender.lower() == "hydrox6":  # For testing purposes only.
+											self.chat("Hello Chat!")
+										try:
+											print(sender, "-", line)				# Prints the lines, so we can see what the bot sees.
+										except UnicodeError:						# This may or may not be important, but it's there anyways.
+											print("~~## ERROR LINE =( ##~~")
+			except UnicodeDecodeError:
+				print("ERROR: UnicodeDecodeError")
 			time.sleep(0.01)													# Usually a good idea
 
 	def whisperListen(self):
